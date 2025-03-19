@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.task_service.enums.Status;
+import com.task_service.enums.TaskType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -48,7 +49,7 @@ public class Task {
 	@Column(nullable = false)
 	private Long createdBy;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private Long assignedTo;
 	
 	@Column(nullable = false)
@@ -60,6 +61,10 @@ public class Task {
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private Status status;
+	
+	@Column(nullable=false)
+	@Enumerated(EnumType.STRING)
+	private TaskType taskType;
 	
 	private LocalDateTime dueDate;
 	

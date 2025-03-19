@@ -3,18 +3,23 @@ package com.workspace_service.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.workspace_service.client.UserService;
 import com.workspace_service.dto.InvitationMessage;
 import com.workspace_service.dto.InviteRequest;
 import com.workspace_service.dto.UserDto;
+import com.workspace_service.dto.WorkspaceDto;
 import com.workspace_service.dto.WorkspaceRequest;
 import com.workspace_service.entity.Workspace;
-import com.workspace_service.repository.InvitationRepository;
+import com.workspace_service.entity.WorkspaceMember;
+import com.workspace_service.enums.Status;
+import com.workspace_service.enums.WorkspaceRole;
+import com.workspace_service.exception.ResourceNotFoundException;
+import com.workspace_service.external.UserService;
+import com.workspace_service.repository.WorkspaceMemeberRepository;
 import com.workspace_service.repository.WorkspaceRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -22,14 +27,27 @@ import lombok.AllArgsConstructor;
 public class WorkspaceService {
 	
 	private final WorkspaceRepository workspaceRep;
+	private final WorkspaceMemeberRepository workspaceMemeberRep;
 	private final UserService userService;
 	private final InvitationService invitationService;
 	
-	
+	@Transactional
 	public Workspace createWorkspace(WorkspaceRequest request) 
-	{
+	{	
+		UserDto user = getUser();
+		
 		Workspace workspace = toEntity(request);
-		return workspaceRep.save(workspace);
+		Workspace savedWorkspace = workspaceRep.save(workspace);
+		
+		WorkspaceMember workspaceMemeber = new WorkspaceMember();
+		workspaceMemeber.setWorkspaceId(savedWorkspace.getId());
+		workspaceMemeber.setUserId(user.getId());
+		workspaceMemeber.setRole(WorkspaceRole.OWNER);
+		workspaceMemeber.setStatus(Status.ACCEPTED);
+		workspaceMemeber.setInvitedBy(user.getId());
+		workspaceMemeberRep.save(workspaceMemeber);
+		
+		return savedWorkspace;
 	}
 	
 	private UserDto getUser() {
@@ -72,6 +90,15 @@ public class WorkspaceService {
 				LocalDateTime.now());
 		
 		invitationService.sendInvitation(invitation);
+	}
+
+	public WorkspaceDto getWorkSpaceById(Long workspaceId) 
+	{
+		UserDto user = getUser();
+		WorkspaceDto workspaceDto = workspaceRep.findWorkspaceDtoByIdAndOwnerId(workspaceId, user.getId())
+				.orElseThrow(()->new ResourceNotFoundException("Workspace not found"));
+		
+		return workspaceDto;
 	}
 
 	

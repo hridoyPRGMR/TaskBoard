@@ -1,6 +1,9 @@
 HELP.md
 internal-secret.key
 .env
+
+*.log
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

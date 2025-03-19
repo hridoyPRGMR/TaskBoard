@@ -3,7 +3,6 @@ package com.workspace_service.exception;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
@@ -51,7 +50,7 @@ public class GlobalException {
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<ApiResponse<?>> runTimeException(ResourceNotFoundException ex){
 		String errorMessage = ex.getMessage();
-		return new ResponseEntity<>(ApiResponse.failure(errorMessage), HttpStatus.CONFLICT);
+		return new ResponseEntity<>(ApiResponse.failure(errorMessage), HttpStatus.NOT_FOUND);
 	}
 	
 	@ExceptionHandler(EmailSendingException.class)

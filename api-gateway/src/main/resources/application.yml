@@ -23,6 +23,11 @@ spring:
         predicates:
           - Path=/workspace/**
 
+      - id : TASKSERVICE
+        uri: lb://TASKSERVICE
+        predicates:
+          - Path=/task/**
+
 eureka:
   client:
     fetch-registry: true

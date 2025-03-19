@@ -1,4 +1,4 @@
-package com.workspace_service.dto;
+package com.task_service.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +10,5 @@ import lombok.Setter;
 public class WorkspaceDto {
 	
 	private Long id;
-	
 	private String name;
 }
