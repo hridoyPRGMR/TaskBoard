@@ -25,6 +25,16 @@ public class UserService {
 		UserProjection user = userRep.findByUsername(username);
 		return user;
 	}
+
+
+
+	public boolean userExist(String email) {
+		return userRep.existsByEmail(email);
+	}
+
+	public UserProjection getUserByEmail(String email) {
+		return userRep.findByUsername(email);
+	}
 	
 	
 }

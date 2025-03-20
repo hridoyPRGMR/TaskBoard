@@ -1,5 +1,7 @@
 package com.workspace_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +14,7 @@ import com.workspace_service.dto.InviteRequest;
 import com.workspace_service.dto.WorkspaceDto;
 import com.workspace_service.dto.WorkspaceRequest;
 import com.workspace_service.entity.Workspace;
+import com.workspace_service.entity.WorkspaceMember;
 import com.workspace_service.helper.ApiResponse;
 import com.workspace_service.service.WorkspaceService;
 
@@ -38,6 +41,12 @@ public class WorkspaceController {
 		workspaceService.invite(workspaceId,inviteRequest);
 		return ResponseEntity.ok(ApiResponse.success("Invitation successfull", null));
 	}	
+	
+	@GetMapping("/{workspaceId}/members")
+	public ResponseEntity<?> getWorkspaceMembers(@PathVariable(name="workspaceId",required=true)Long workspaceId){
+		List<WorkspaceMember> workspaceMembers = workspaceService.getWorkspaceMembers(workspaceId);
+		return ResponseEntity.ok(ApiResponse.success("Workspace Members fetched successfull", workspaceMembers));
+	}
 	
 	
 	//internal api call

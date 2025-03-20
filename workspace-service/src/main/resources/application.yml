@@ -63,7 +63,7 @@ eureka:
 
 logging:
   level:
-    root: WARN
+    root: INFO
       
 
 

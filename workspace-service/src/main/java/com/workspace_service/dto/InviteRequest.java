@@ -11,6 +11,4 @@ import lombok.Setter;
 @Setter
 public class InviteRequest {
 	private String email;
-	private String invitedBy;
-	
 }	

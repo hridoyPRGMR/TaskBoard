@@ -15,7 +15,7 @@ public class InvitationMessage {
 	
 	private Long workspaceId;
 	private String email;
-	private String invitedBy;
+	private UserDto invitedBy;
 	private LocalDateTime invitationTime;
 	
 }

@@ -1,6 +1,7 @@
 package com.workspace_service.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -30,6 +31,10 @@ public class WorkspaceService {
 	private final WorkspaceMemeberRepository workspaceMemeberRep;
 	private final UserService userService;
 	private final InvitationService invitationService;
+	
+	public boolean WorkspaceExist(Long workspaceID) {
+		return workspaceRep.existsById(workspaceID);
+	}
 	
 	@Transactional
 	public Workspace createWorkspace(WorkspaceRequest request) 
@@ -79,17 +84,29 @@ public class WorkspaceService {
 
 	public void invite(Long workspaceId, InviteRequest inviteRequest) {
 		
+		UserDto invitedUser = userService.getUserByEmail(inviteRequest.getEmail());
+		if(invitedUser == null) {
+			throw new ResourceNotFoundException("User not exist with email: "+inviteRequest.getEmail());
+		}
+		
 		UserDto user = getUser();
 		Workspace workspace = getWorkspaceById(workspaceId);
-		
 		
 		InvitationMessage invitation = new InvitationMessage(
 				workspace.getId(),
 				inviteRequest.getEmail(), 
-				user.getEmail(), 
+				user, 
 				LocalDateTime.now());
 		
 		invitationService.sendInvitation(invitation);
+		
+		WorkspaceMember workspaceMember = new WorkspaceMember();
+		workspaceMember.setInvitedBy(user.getId());
+		workspaceMember.setRole(WorkspaceRole.MEMBER);
+		workspaceMember.setStatus(Status.PENDING);
+		workspaceMember.setUserId(invitedUser.getId());
+		workspaceMember.setWorkspaceId(workspaceId);
+		workspaceMemeberRep.save(workspaceMember);
 	}
 
 	public WorkspaceDto getWorkSpaceById(Long workspaceId) 
@@ -99,6 +116,19 @@ public class WorkspaceService {
 				.orElseThrow(()->new ResourceNotFoundException("Workspace not found"));
 		
 		return workspaceDto;
+	}
+
+	public List<WorkspaceMember> getWorkspaceMembers(Long workspaceId) 
+	{
+		UserDto user = getUser();
+		
+		if(!WorkspaceExist(workspaceId)) {
+			throw new ResourceNotFoundException("Workspace not found.");
+		}
+		
+		List<WorkspaceMember> workspaceMembers = workspaceMemeberRep.findAllByWorkspaceIdAndUserId(workspaceId, user.getId());
+		
+		return workspaceMembers;
 	}
 
 	

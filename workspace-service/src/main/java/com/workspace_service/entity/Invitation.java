@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,7 +24,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "invitations")
+@Table(name = "invitations",uniqueConstraints= {
+	@UniqueConstraint(columnNames= {"workspace_id","invited_email"})
+})
 public class Invitation {
 
 	@Id
@@ -36,7 +39,7 @@ public class Invitation {
 	private String invitedEmail;
 	
 	@Column(nullable = false)
-	private String invitedBy;
+	private Long invitedBy;
 	
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

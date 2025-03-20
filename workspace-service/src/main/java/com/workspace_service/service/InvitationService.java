@@ -29,6 +29,8 @@ public class InvitationService {
                 " already invited to this workspace.");
         }
     	
-        kafkaTemplate.send("workspace-invitations", invitation);
+    	String key = invitation.getEmail() + "_" + invitation.getWorkspaceId();
+    	
+        kafkaTemplate.send("workspace-invitations",key, invitation);
     }
 }

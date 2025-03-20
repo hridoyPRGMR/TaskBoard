@@ -34,15 +34,21 @@ public class InvitationConsumer {
 
 			// generate token & create invitation
 			String token = TokenGenerator.generateToken();
+			
 			Invitation invitation = new Invitation();
 			invitation.setWorkspaceId(invitationMessage.getWorkspaceId());
 			invitation.setToken(token);
 			invitation.setInvitedEmail(invitationMessage.getEmail());
 			invitation.setStatus(Status.PENDING);
-			invitation.setInvitedBy(invitationMessage.getInvitedBy());
-
-			invitationRep.save(invitation);
-
+			invitation.setInvitedBy(invitationMessage.getInvitedBy().getId());
+			
+			//check 
+			boolean invitationExist = invitationRep.existsByInvitedEmailAndWorkspaceId(invitation.getInvitedEmail(), invitation.getWorkspaceId());
+			
+			if(!invitationExist) {
+				invitationRep.save(invitation);
+			}
+			
 			sendInvitationEmail(invitationMessage);
 			
 		} catch (Exception e) {
@@ -54,7 +60,7 @@ public class InvitationConsumer {
 	private void sendInvitationEmail(InvitationMessage invitationMessage) {
 	    try {
 	        String subject = "You're invited to join a workspace!";
-	        String body = "Hello,\n\nYou have been invited by " + invitationMessage.getInvitedBy()
+	        String body = "Hello,\n\nYou have been invited by " + invitationMessage.getInvitedBy().getEmail()
 	                + " to join workspace.\nPlease log in and check the 'Invitations' section:\nVisit: taskboard.com\n\nThank you!";
 
 	        emailService.sendInvitationEmail(invitationMessage.getEmail(), subject, body);
