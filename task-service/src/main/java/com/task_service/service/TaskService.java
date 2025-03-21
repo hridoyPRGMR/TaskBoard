@@ -3,8 +3,12 @@ package com.task_service.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import com.task_service.dto.AssignUserRequest;
+import com.task_service.dto.TaskDto;
 import com.task_service.dto.TaskRequest;
 import com.task_service.dto.UserDto;
 import com.task_service.dto.WorkspaceDto;
@@ -27,13 +31,12 @@ public class TaskService {
 	private final TaskRepository taskRep;
 	private final UserService userService;
 	private final WorkspaceService workspaceService;
-		
-	//helper methods start
+
+	// helper methods start
 	public Task getTaskById(Long id) {
-		
-		Task task = taskRep.findTaskById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Task not found."));
-		
+
+		Task task = taskRep.findTaskById(id).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+
 		return task;
 	}
 
@@ -41,34 +44,67 @@ public class TaskService {
 		UserDto user = userService.getUserByUsername();
 		return user;
 	}
-	
+
 	public WorkspaceDto fetchWorkspace(Long workspaceId) {
-	     try {
-	    	 return workspaceService.getWorkspaceById(workspaceId);
-	     } 
-	     catch (FeignException.NotFound ex) {
-	    	 throw new ResourceNotFoundException("Workspace not found.");
-	     }
+		try {
+			return workspaceService.getWorkspaceById(workspaceId);
+		} catch (FeignException.NotFound ex) {
+			throw new ResourceNotFoundException("Workspace not found.");
+		}
 	}
 	// helper methods ends
 
-	//for creating task
+//	for creating task
+	@CacheEvict(value = "workspaceTasks",key="#workspaceId")
 	public void createTask(Long workspaceId, List<TaskRequest> taskRequests) {
-		
+
 		UserDto user = getUser();
 		WorkspaceDto workspace = fetchWorkspace(workspaceId);
-		
-		List<Task> tasks = taskRequests.stream().map(taskRequest -> toEntity(taskRequest,workspace.getId(), user.getId()))
+
+		List<Task> tasks = taskRequests.stream()
+				.map(taskRequest -> toEntity(taskRequest, workspace.getId(), user.getId()))
 				.collect(Collectors.toList());
 
 		taskRep.saveAll(tasks);
 	}
+
+	// for creating sub task
+	public void createSubTask(Long workspaceId, Long taskId, @Valid List<TaskRequest> subTaskRequests) {
+
+		UserDto user = getUser();
+		WorkspaceDto workspace = fetchWorkspace(workspaceId);
+		Task parentTask = getTaskById(taskId);
+
+		List<Task> tasks = subTaskRequests.stream()
+				.map(taskRequest -> toEntity(taskRequest, workspace.getId(), parentTask, user.getId()))
+				.collect(Collectors.toList());
+
+		taskRep.saveAll(tasks);
+
+	}
+
+	@Cacheable(value= "workspaceTasks" , key="#workspaceId")
+	public List<TaskDto> getTasks(Long workspaceId) {
+		List<TaskDto> tasks = taskRep.findAllByWorkspaceId(workspaceId);
+		return tasks;
+	}
+
+	public Task assignUser(Long taskId, AssignUserRequest request) {
+		Task task = taskRep.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+		task.setAssignedTo(request.getUserId());
+
+		List<Task> subTasks = task.getSubTasks();
+		subTasks.stream().forEach(subTask -> subTask.setAssignedTo(request.getUserId()));
+		taskRep.saveAll(subTasks);
+
+		return taskRep.save(task);
+	}
+
 	
 	// for converting task
-	private Task toEntity(TaskRequest request,Long workspaceId, Long createdBy) 
-	{
+	private Task toEntity(TaskRequest request, Long workspaceId, Long createdBy) {
 		Task task = new Task();
-		
+
 		task.setWorkspaceId(workspaceId);
 		task.setTitle(request.getTitle());
 		task.setDescription(request.getDescription());
@@ -78,27 +114,12 @@ public class TaskService {
 
 		return task;
 	}
-	
-	
-	//for creating sub task 
-	public void createSubTask(Long workspaceId, Long taskId, @Valid List<TaskRequest> subTaskRequests) {
-		
-		UserDto user = getUser();
-		WorkspaceDto workspace = fetchWorkspace(workspaceId);
-		Task parentTask = getTaskById(taskId);
-		
-		List<Task> tasks = subTaskRequests.stream().map(taskRequest -> toEntity(taskRequest,workspace.getId(),parentTask, user.getId()))
-				.collect(Collectors.toList());
-
-		taskRep.saveAll(tasks);
-		
-	}
 
 	// for converting subtask
 	private Task toEntity(TaskRequest request, Long workspaceId, Task parentTask, Long userId) {
-		
+
 		Task task = new Task();
-		
+
 		task.setWorkspaceId(workspaceId);
 		task.setTitle(request.getTitle());
 		task.setDescription(request.getDescription());
@@ -106,7 +127,7 @@ public class TaskService {
 		task.setCreatedBy(userId);
 		task.setStatus(Status.TODO);
 		task.setParentTask(parentTask);
-		
+
 		return task;
 	}
 
