@@ -1,6 +1,5 @@
 package com.task_service.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +7,12 @@ import lombok.Setter;
 @Setter
 public class AssignUserRequest {
 	
-	@NotNull
 	private Long userId;
+	
+	private Boolean canEdit;
+	
+	private Boolean canDelete;
+	
+	private Boolean canComment;
 	
 }

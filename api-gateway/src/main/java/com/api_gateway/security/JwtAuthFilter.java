@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
@@ -32,7 +33,7 @@ public class JwtAuthFilter implements WebFilter {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public @NonNull Mono<Void> filter(@NonNull ServerWebExchange exchange, @NonNull WebFilterChain chain) {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         try {
@@ -55,7 +56,6 @@ public class JwtAuthFilter implements WebFilter {
 
     private Mono<Void> authenticateUser(UserDetails userDetails, String token, ServerWebExchange exchange, WebFilterChain chain) {
         if (!jwtService.validateToken(token, userDetails.getUsername())) {
-            System.out.println("⛔ JWT Validation Failed");
             return unauthorized(exchange);
         }
 

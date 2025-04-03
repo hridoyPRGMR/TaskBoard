@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.workspace_service.dto.InviteRequest;
 import com.workspace_service.dto.WorkspaceDto;
+import com.workspace_service.dto.WorkspaceMemberDto;
 import com.workspace_service.dto.WorkspaceRequest;
 import com.workspace_service.entity.Workspace;
 import com.workspace_service.entity.WorkspaceMember;
@@ -35,6 +36,13 @@ public class WorkspaceController {
 		return ResponseEntity.ok(ApiResponse.success("Workspace saved succesfully", workspace));
 	}
 	
+	@GetMapping
+	public ResponseEntity<?> getWorkspaces()
+	{
+		List<WorkspaceDto> workspaces = workspaceService.getWorkspaces();
+		return ResponseEntity.ok(ApiResponse.success("Worksspaces fetched successfully.",workspaces));
+	}
+	
 	@PostMapping("/{id}/invite")
 	public ResponseEntity<?> inviteUser(@PathVariable("id")Long workspaceId,@RequestBody InviteRequest inviteRequest)
 	{
@@ -43,8 +51,9 @@ public class WorkspaceController {
 	}	
 	
 	@GetMapping("/{workspaceId}/members")
-	public ResponseEntity<?> getWorkspaceMembers(@PathVariable(name="workspaceId",required=true)Long workspaceId){
-		List<WorkspaceMember> workspaceMembers = workspaceService.getWorkspaceMembers(workspaceId);
+	public ResponseEntity<?> getWorkspaceMembers(@PathVariable(name="workspaceId",required=true)Long workspaceId)
+	{
+		List<WorkspaceMemberDto> workspaceMembers = workspaceService.getWorkspaceMembers(workspaceId);
 		return ResponseEntity.ok(ApiResponse.success("Workspace Members fetched successfull", workspaceMembers));
 	}
 	

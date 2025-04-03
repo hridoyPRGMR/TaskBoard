@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.task_service.enums.Status;
 import com.task_service.enums.TaskType;
 
@@ -39,10 +42,12 @@ public class Task {
 	@Column(nullable = false)
 	private Long workspaceId;
 	
+	@JsonBackReference
 	@ManyToOne
 	@JoinColumn(name = "parent_task_id")
 	private Task parentTask;
 	
+	@JsonManagedReference
 	@OneToMany(mappedBy = "parentTask" , cascade = CascadeType.ALL)
 	private List<Task> subTasks = new ArrayList<>();
 	
@@ -68,9 +73,11 @@ public class Task {
 	
 	private LocalDateTime dueDate;
 	
+	@JsonIgnore
 	@Column(updatable = false)
 	private LocalDateTime createdAt;
 	
+	@JsonIgnore
 	private LocalDateTime updatedAt;
 	
 	@PrePersist

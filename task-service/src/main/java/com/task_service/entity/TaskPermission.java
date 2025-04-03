@@ -10,12 +10,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "task_permisions")
 public class TaskPermission {
@@ -32,8 +30,6 @@ public class TaskPermission {
 
 	private Boolean canEdit = false;
 
-	private Boolean canUpdate = false;
-
 	private Boolean canDelete = false;
 
 	private Boolean canComment = false;
@@ -41,16 +37,23 @@ public class TaskPermission {
 	@Column(updatable = false)
 	private LocalDateTime createdAt;
 
+	public TaskPermission(Long taskId, Long userId, Boolean canEdit, Boolean canDelete, Boolean canComment) {
+		this.taskId = taskId;
+		this.userId = userId;
+		this.canEdit = canEdit;
+		this.canDelete = canDelete;
+		this.canComment = canComment;
+	}
+
 	@PrePersist
 	private void onCreate() {
 		this.createdAt = LocalDateTime.now();
 		if (this.canEdit == null)
 			this.canEdit = false;
-		if (this.canUpdate == null)
-			this.canUpdate = false;
 		if (this.canDelete == null)
 			this.canDelete = false;
 		if (this.canComment == null)
 			this.canComment = false;
 	}
+
 }

@@ -1,8 +1,11 @@
 package com.workspace_service.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -10,6 +13,7 @@ import com.workspace_service.dto.InvitationMessage;
 import com.workspace_service.dto.InviteRequest;
 import com.workspace_service.dto.UserDto;
 import com.workspace_service.dto.WorkspaceDto;
+import com.workspace_service.dto.WorkspaceMemberDto;
 import com.workspace_service.dto.WorkspaceRequest;
 import com.workspace_service.entity.Workspace;
 import com.workspace_service.entity.WorkspaceMember;
@@ -47,7 +51,7 @@ public class WorkspaceService {
 		WorkspaceMember workspaceMemeber = new WorkspaceMember();
 		workspaceMemeber.setWorkspaceId(savedWorkspace.getId());
 		workspaceMemeber.setUserId(user.getId());
-		workspaceMemeber.setRole(WorkspaceRole.OWNER);
+		workspaceMemeber.setRole(WorkspaceRole.ADMIN);
 		workspaceMemeber.setStatus(Status.ACCEPTED);
 		workspaceMemeber.setInvitedBy(user.getId());
 		workspaceMemeberRep.save(workspaceMemeber);
@@ -84,30 +88,37 @@ public class WorkspaceService {
 
 	public void invite(Long workspaceId, InviteRequest inviteRequest) {
 		
-		UserDto invitedUser = userService.getUserByEmail(inviteRequest.getEmail());
-		if(invitedUser == null) {
-			throw new ResourceNotFoundException("User not exist with email: "+inviteRequest.getEmail());
-		}
-		
+		List<UserDto> users = userService.getUsersByEmails(inviteRequest.getEmails());
 		UserDto user = getUser();
 		Workspace workspace = getWorkspaceById(workspaceId);
 		
-		InvitationMessage invitation = new InvitationMessage(
-				workspace.getId(),
-				inviteRequest.getEmail(), 
-				user, 
-				LocalDateTime.now());
+		for(UserDto userDto:users) 
+		{
+			InvitationMessage invitation = new InvitationMessage(
+					workspace.getId(),
+					userDto.getEmail(), 
+					user, 
+					LocalDateTime.now());
+			invitationService.sendInvitation(invitation);
+		}
 		
-		invitationService.sendInvitation(invitation);
+		List<WorkspaceMember> workspaceMembers = new ArrayList<>();
 		
-		WorkspaceMember workspaceMember = new WorkspaceMember();
-		workspaceMember.setInvitedBy(user.getId());
-		workspaceMember.setRole(WorkspaceRole.MEMBER);
-		workspaceMember.setStatus(Status.PENDING);
-		workspaceMember.setUserId(invitedUser.getId());
-		workspaceMember.setWorkspaceId(workspaceId);
-		workspaceMemeberRep.save(workspaceMember);
+		for(UserDto userDto:users)
+		{
+			WorkspaceMember workspaceMember = new WorkspaceMember();
+			
+			workspaceMember.setInvitedBy(user.getId());
+			workspaceMember.setRole(inviteRequest.getRole());
+			workspaceMember.setStatus(Status.PENDING);
+			workspaceMember.setUserId(userDto.getId());
+			workspaceMember.setWorkspaceId(workspaceId);
+			workspaceMembers.add(workspaceMember);
+		}
+		
+		workspaceMemeberRep.saveAll(workspaceMembers);
 	}
+	
 
 	public WorkspaceDto getWorkSpaceById(Long workspaceId) 
 	{
@@ -118,7 +129,7 @@ public class WorkspaceService {
 		return workspaceDto;
 	}
 
-	public List<WorkspaceMember> getWorkspaceMembers(Long workspaceId) 
+	public List<WorkspaceMemberDto> getWorkspaceMembers(Long workspaceId) 
 	{
 		UserDto user = getUser();
 		
@@ -126,9 +137,35 @@ public class WorkspaceService {
 			throw new ResourceNotFoundException("Workspace not found.");
 		}
 		
-		List<WorkspaceMember> workspaceMembers = workspaceMemeberRep.findAllByWorkspaceIdAndUserId(workspaceId, user.getId());
+		 List<WorkspaceMember> workspaceMembers =
+				 workspaceMemeberRep.findAllByWorkspaceIdAndUserId(workspaceId, user.getId());
+			
+		//extract user ids
+		List<Long> userIds = workspaceMembers.stream()
+			.map(item -> item.getUserId())
+			.collect(Collectors.toList());
 		
-		return workspaceMembers;
+		//fetch users from userservice
+		List<UserDto> users = userService.getUsersByIds(userIds);
+		
+		Map<Long,UserDto> userMap = users.stream()
+				.collect(Collectors.toMap(UserDto::getId, u->u));
+		
+		return workspaceMembers.stream()
+			.map(member -> new WorkspaceMemberDto(
+				member.getWorkspaceId(),
+				member.getUserId(),
+				userMap.get(member.getUserId()).getUsername(),
+				member.getStatus(),
+				member.getRole()
+			))
+			.collect(Collectors.toList());
+		
+	}
+
+	public List<WorkspaceDto> getWorkspaces() {
+		UserDto user = getUser(); 
+		return workspaceRep.findByOwnerId(user.getId());
 	}
 
 	
